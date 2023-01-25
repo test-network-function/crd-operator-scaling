@@ -2,6 +2,8 @@
 project for creating a crd that managed a deploymrnt that project is too simple and there is alot pf hard coded things - we can change on it 
 refernce for creating the operator 
 https://betterprogramming.pub/build-a-kubernetes-operator-in-10-minutes-11eec1492d30
+other useful refernce 
+https://medium.com/@thescott111/autoscaling-kubernetes-custom-resource-using-the-hpa-957d00bb7993
 steps that need to do to run it : 
 first cd to new-pro
 1. run make manifests
