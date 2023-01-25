@@ -93,7 +93,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 
-
+# amals steps
 # operator-scaling
 project for creating a crd that managed a deploymrnt that project is too simple and there is alot pf hard coded things - we can change on it 
 refernce for creating the operator 
@@ -101,16 +101,23 @@ https://betterprogramming.pub/build-a-kubernetes-operator-in-10-minutes-11eec149
 steps that need to do to run it : 
 first cd to new-pro
 1. run 
-```sh make manifests
+```sh 
+make manifests
 ```
 2. this is to run the controller
-2.1  ```sh make install 
+2.1  
+```sh 
+make install 
 ```
 - can see the crd with that command  kubectl get crds
-2.2 ```sh make run
+2.2 
+```sh 
+make run
 ```
  - its need to be up on the background 
 on other terminal 
-3. ```sh kubectl apply -f config/samples  --validate=false
+3. 
+```sh 
+kubectl apply -f config/samples  --validate=false
 ```
 to run it in our test need to add the crd to the tnf_config.yaml.
