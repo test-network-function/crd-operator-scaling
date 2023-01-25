@@ -15,5 +15,6 @@ subresources:
     specReplicasPath: .spec.replicas
     statusReplicasPath: .status.replicas
 spec:
+    name: jack
     replicas: 2
   # TODO(user): Add fields here
