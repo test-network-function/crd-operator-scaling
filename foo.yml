@@ -1,0 +1,7 @@
+
+apiVersion: tutorial.my.domain/v1
+kind: Foo
+metadata:
+  name: foo-01
+spec:
+  name: jack
