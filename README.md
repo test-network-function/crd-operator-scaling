@@ -1,1 +1,1 @@
-# crd-operator-scaling
+# operator-scaling
