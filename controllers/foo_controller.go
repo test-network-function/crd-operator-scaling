@@ -11,6 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 	tutorialv1 "my.domain/tutorial/api/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -45,6 +46,7 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		log.Error(err, "unable to fetch Foo")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+
 	log.Info("create deployment")
 	size := int32(1)
 	dep := &appsv1.Deployment{
@@ -53,6 +55,15 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			Namespace: "tnf",
 			Labels: map[string]string{
 				"app": "jack",
+			},
+			OwnerReferences: []metav1.OwnerReference{{
+				APIVersion:         "tutorial.my.domain/v1",
+				Kind:               "Foo",
+				Name:               "foo-01",
+				UID:                foo.GetUID(),
+				BlockOwnerDeletion: pointer.Bool(true),
+				Controller:         pointer.Bool(true),
+			},
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
