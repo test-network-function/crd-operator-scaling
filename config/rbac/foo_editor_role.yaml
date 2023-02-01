@@ -15,6 +15,7 @@ rules:
   - tutorial.my.domain
   resources:
   - foos
+  - deployments.apps
   verbs:
   - create
   - delete

@@ -46,6 +46,7 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		log.Error(err, "unable to fetch Foo")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+	runAs := int64(20000)
 
 	log.Info("create deployment")
 	size := int32(1)
@@ -59,7 +60,7 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			OwnerReferences: []metav1.OwnerReference{{
 				APIVersion:         "tutorial.my.domain/v1",
 				Kind:               "Foo",
-				Name:               "foo-01",
+				Name:               "foo-sample",
 				UID:                foo.GetUID(),
 				BlockOwnerDeletion: pointer.Bool(true),
 				Controller:         pointer.Bool(true),
@@ -80,6 +81,9 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 					},
 				},
 				Spec: corev1.PodSpec{
+					SecurityContext: &corev1.PodSecurityContext{
+						RunAsUser: &runAs,
+					},
 					Containers: []corev1.Container{{
 						Resources: corev1.ResourceRequirements{
 							Limits: corev1.ResourceList{
@@ -88,6 +92,9 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 							Requests: corev1.ResourceList{
 								corev1.ResourceCPU: *resource.NewMilliQuantity(250, resource.DecimalSI),
 							},
+						},
+						SecurityContext: &corev1.SecurityContext{
+							RunAsUser: &runAs,
 						},
 						Image:           "quay.io/testnetworkfunction/cnf-test-partner:latest",
 						ImagePullPolicy: corev1.PullIfNotPresent,
@@ -107,6 +114,10 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		Name:      "jack",
 		Namespace: "tnf",
 	}, found)
+	if errf != nil {
+		log.Error(errf, "unable to list pods")
+
+	}
 	if errf != nil && errors.IsNotFound(errf) {
 		errdep := r.Create(context.TODO(), dep)
 		found = dep
