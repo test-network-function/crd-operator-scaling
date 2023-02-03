@@ -55,7 +55,8 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			Name:      "jack",
 			Namespace: "tnf",
 			Labels: map[string]string{
-				"app": "jack",
+				"app":                               "jack",
+				"test-network-function.com/generic": "target",
 			},
 			OwnerReferences: []metav1.OwnerReference{{
 				APIVersion:         "tutorial.my.domain/v1",
@@ -77,7 +78,8 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": "jack",
+						"app":                               "jack",
+						"test-network-function.com/generic": "target",
 					},
 				},
 				Spec: corev1.PodSpec{
