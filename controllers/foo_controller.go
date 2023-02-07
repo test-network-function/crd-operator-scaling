@@ -55,8 +55,7 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			Name:      "jack",
 			Namespace: "tnf",
 			Labels: map[string]string{
-				"app":                               "jack",
-				"test-network-function.com/generic": "target",
+				"app": "jack",
 			},
 			OwnerReferences: []metav1.OwnerReference{{
 				APIVersion:         "tutorial.my.domain/v1",
@@ -78,8 +77,7 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app":                               "jack",
-						"test-network-function.com/generic": "target",
+						"app": "jack",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -156,7 +154,11 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		err = r.Update(context.TODO(), found)
 		if err != nil {
 			log.Error(err, "Error retrieving Deployment labels")
-
+		} else {
+			newfoo.Status.Replicas = *found.Spec.Replicas
+			if err := r.Status().Update(ctx, &newfoo); err != nil {
+				return ctrl.Result{}, err
+			}
 		}
 	}
 	log.Info("foo custom resource reconciled")
