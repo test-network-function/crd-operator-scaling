@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -11,6 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 	tutorialv1 "my.domain/tutorial/api/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -46,7 +48,6 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		log.Error(err, "unable to fetch Foo")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	runAs := int64(20000)
 
 	log.Info("create deployment")
 	size := int32(1)
@@ -77,13 +78,11 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": "jack",
+						"app":                               "jack",
+						"test-network-function.com/generic": "target",
 					},
 				},
 				Spec: corev1.PodSpec{
-					SecurityContext: &corev1.PodSecurityContext{
-						RunAsUser: &runAs,
-					},
 					Containers: []corev1.Container{{
 						Resources: corev1.ResourceRequirements{
 							Limits: corev1.ResourceList{
@@ -93,9 +92,6 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 								corev1.ResourceCPU: *resource.NewMilliQuantity(250, resource.DecimalSI),
 							},
 						},
-						SecurityContext: &corev1.SecurityContext{
-							RunAsUser: &runAs,
-						},
 						Image:           "quay.io/testnetworkfunction/cnf-test-partner:latest",
 						ImagePullPolicy: corev1.PullIfNotPresent,
 						Name:            "jack",
@@ -103,7 +99,67 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 							ContainerPort: 8080,
 							Name:          "jack",
 						}},
+						Lifecycle: &corev1.Lifecycle{
+							PostStart: &corev1.LifecycleHandler{
+								Exec: &corev1.ExecAction{
+									Command: []string{"/bin/sh", "-c", "echo Hello from the postStart handler > /tmp/message"},
+								},
+							},
+							PreStop: &corev1.LifecycleHandler{
+								Exec: &corev1.ExecAction{
+									Command: []string{"/bin/sh", "-c", "killall -0 tail"},
+								},
+							},
+						},
+						LivenessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Port: intstr.IntOrString{
+										IntVal: 8080,
+									},
+									Path: "/health",
+									HTTPHeaders: []corev1.HTTPHeader{{
+										Name:  "health-check",
+										Value: "liveness",
+									},
+									},
+								},
+							},
+						},
+						ReadinessProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Port: intstr.IntOrString{
+										IntVal: 8080,
+									},
+									Path: "/ready",
+									HTTPHeaders: []corev1.HTTPHeader{{
+										Name:  "health-check",
+										Value: "readiness",
+									},
+									},
+								},
+							},
+						},
+						StartupProbe: &corev1.Probe{
+							ProbeHandler: corev1.ProbeHandler{
+								HTTPGet: &corev1.HTTPGetAction{
+									Port: intstr.IntOrString{
+										IntVal: 8080,
+									},
+									Path: "/ready",
+									HTTPHeaders: []corev1.HTTPHeader{{
+										Name:  "health-check",
+										Value: "startup",
+									},
+									},
+								},
+							},
+						},
 					}},
+					Affinity: &corev1.Affinity{
+						PodAntiAffinity: &corev1.PodAntiAffinity{},
+					},
 				},
 			},
 		},
@@ -140,7 +196,7 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	if err := r.Status().Update(ctx, &foo); err != nil {
 		return ctrl.Result{}, err
 	}
-
+	time.Sleep(10 * time.Second)
 	var newfoo tutorialv1.Foo
 	if err := r.Get(ctx, req.NamespacedName, &newfoo); err != nil {
 		log.Error(err, "unable to fetch Foo")
@@ -159,6 +215,7 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			if err := r.Status().Update(ctx, &newfoo); err != nil {
 				return ctrl.Result{}, err
 			}
+			time.Sleep(10 * time.Second)
 		}
 	}
 	log.Info("foo custom resource reconciled")
