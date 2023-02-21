@@ -1,0 +1,143 @@
+# Clone the repos
+# Spawn the cluster
+# Run the make install
+# Run the tests
+
+name: Test Incoming Changes
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+env:
+  REGISTRY: quay.io
+  REGISTRY_LOCAL: localhost
+  TNF_IMAGE_NAME: testnetworkfunction/cnf-certification-test
+  TNF_IMAGE_TAG: unstable
+  OCT_IMAGE_NAME: testnetworkfunction/oct
+  OCT_IMAGE_TAG: latest
+  TNF_CONTAINER_CLIENT: docker
+  TNF_NON_INTRUSIVE_ONLY: false
+  TNF_ALLOW_PREFLIGHT_INSECURE: false
+  TNF_DISABLE_CONFIG_AUTODISCOVER: false
+  TNF_CONFIG_DIR: /tmp/tnf/config
+  TNF_OUTPUT_DIR: /tmp/tnf/output
+  TNF_SRC_URL: 'https://github.com/${{ github.repository }}'
+  TESTING_CMD_PARAMS: '-n host -i ${REGISTRY_LOCAL}/${TNF_IMAGE_NAME}:${TNF_IMAGE_TAG} -t ${TNF_CONFIG_DIR} -o ${TNF_OUTPUT_DIR}'
+  TNF_SMOKE_TESTS_LOG_LEVEL: trace
+  ON_DEMAND_DEBUG_PODS: false
+  TERM: xterm-color
+
+jobs:
+  smoke-tests:
+    name: Run Smoke Tests
+    runs-on: ubuntu-22.04
+    env:
+      SHELL: /bin/bash
+      KUBECONFIG: '/home/runner/.kube/config'
+      PFLT_DOCKERCONFIG: '/home/runner/.docker/config'
+
+    steps:
+      # Clone all of the repos needed.
+      # We need the crd-operator-scaling, cnf-certification-test, and cnf-certification-test-partner repos.
+      - name: Check out crd-operator-scaling code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.sha }}
+          path: crd-operator-scaling
+
+      - name: Check out `cnf-certification-test-partner`
+        uses: actions/checkout@v3
+        with:
+          repository: test-network-function/cnf-certification-test-partner
+          path: cnf-certification-test-partner
+
+      - name: Check out `cnf-certification-test`
+        uses: actions/checkout@v3
+        with:
+          repository: test-network-function/cnf-certification-test
+          path: cnf-certification-test
+
+      # Create a Kind cluster for testing from the -partner repo
+      - name: Start the Kind cluster for `local-test-infra`
+        uses: ./cnf-certification-test-partner/.github/actions/start-k8s-cluster
+        with:
+          working_directory: cnf-certification-test-partner
+
+      - name: Create `local-test-infra` OpenShift resources
+        uses: ./cnf-certification-test-partner/.github/actions/create-local-test-infra-resources
+        with:
+          working_directory: cnf-certification-test-partner
+
+      # Deploy the CRD scaling repo 
+      - name: Run 'make manifests'
+        run: make manifests
+        with:
+          working_directory: crd-operator-scaling/crd-operator-scaling
+
+      - name: Run 'make install'
+        run: make install
+        with:
+          working_directory: crd-operator-scaling/crd-operator-scaling
+
+      - name: Run 'make deploy'
+        run: make deploy
+        with:
+          working_directory: crd-operator-scaling/crd-operator-scaling
+
+      - name: Wait for the deployment
+        run: oc wait deployment new-pro-controller-manager -n tnf --for=condition=available --timeout=240s
+        with:
+          working_directory: crd-operator-scaling/crd-operator-scaling
+
+      - name: Run 'make addrole'
+        run: make addrole
+        with:
+          working_directory: crd-operator-scaling/crd-operator-scaling
+
+      - name: Apply the config/samples
+        run: kubectl apply -f config/samples --validate=false
+        with:
+          working_directory: crd-operator-scaling/crd-operator-scaling
+
+      # Clone and run the cnf-certification-test repo as a container
+      - name: Build the `cnf-certification-test` image
+        run: |
+          make build-image-local
+        env:
+          IMAGE_TAG: ${TNF_IMAGE_TAG}
+        with:
+          working_directory: cnf-certification-test
+
+      - name: Create required TNF config files and directories
+        run: |
+          mkdir -p $TNF_CONFIG_DIR $TNF_OUTPUT_DIR
+          cp cnf-certification-test/*.yml $TNF_CONFIG_DIR
+        shell: bash
+        with:
+          working_directory: cnf-certification-test
+
+      - name: 'Test: Run without any TS, just get diagnostic information'
+        run: TNF_LOG_LEVEL=${TNF_SMOKE_TESTS_LOG_LEVEL} ./run-tnf-container.sh ${{ env.TESTING_CMD_PARAMS }}
+        with:
+          working_directory: cnf-certification-test
+          
+      - name: 'Test: Run Smoke Tests in a TNF container'
+        run: TNF_LOG_LEVEL=${TNF_SMOKE_TESTS_LOG_LEVEL} ./run-tnf-container.sh ${{ env.TESTING_CMD_PARAMS }} -l "common"
+        with:
+          working_directory: cnf-certification-test
+
+      - name: Upload container test results as an artifact
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: smoke-tests-container
+          path: |
+            ${{ env.TNF_OUTPUT_DIR }}/*.xml
+            ${{ env.TNF_OUTPUT_DIR }}/claim.json
+            ${{ env.TNF_OUTPUT_DIR }}/claimjson.js
+            ${{ env.TNF_OUTPUT_DIR }}/results.html
+            ${{ env.TNF_OUTPUT_DIR }}/tnf-execution.log
+          working_directory: cnf-certification-test
