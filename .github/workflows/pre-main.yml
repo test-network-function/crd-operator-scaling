@@ -74,33 +74,27 @@ jobs:
       # Deploy the CRD scaling repo 
       - name: Run 'make manifests'
         run: make manifests
-        with:
-          working_directory: crd-operator-scaling/crd-operator-scaling
+        working-directory: crd-operator-scaling/crd-operator-scaling
 
       - name: Run 'make install'
         run: make install
-        with:
-          working_directory: crd-operator-scaling/crd-operator-scaling
+        working-directory: crd-operator-scaling/crd-operator-scaling
 
       - name: Run 'make deploy'
         run: make deploy
-        with:
-          working_directory: crd-operator-scaling/crd-operator-scaling
+        working-directory: crd-operator-scaling/crd-operator-scaling
 
       - name: Wait for the deployment
         run: oc wait deployment new-pro-controller-manager -n tnf --for=condition=available --timeout=240s
-        with:
-          working_directory: crd-operator-scaling/crd-operator-scaling
+        working-directory: crd-operator-scaling/crd-operator-scaling
 
       - name: Run 'make addrole'
         run: make addrole
-        with:
-          working_directory: crd-operator-scaling/crd-operator-scaling
+        working-directory: crd-operator-scaling/crd-operator-scaling
 
       - name: Apply the config/samples
         run: kubectl apply -f config/samples --validate=false
-        with:
-          working_directory: crd-operator-scaling/crd-operator-scaling
+        working-directory: crd-operator-scaling/crd-operator-scaling
 
       # Clone and run the cnf-certification-test repo as a container
       - name: Build the `cnf-certification-test` image
@@ -108,26 +102,22 @@ jobs:
           make build-image-local
         env:
           IMAGE_TAG: ${TNF_IMAGE_TAG}
-        with:
-          working_directory: cnf-certification-test
+        working-directory: cnf-certification-test
 
       - name: Create required TNF config files and directories
         run: |
           mkdir -p $TNF_CONFIG_DIR $TNF_OUTPUT_DIR
           cp cnf-certification-test/*.yml $TNF_CONFIG_DIR
         shell: bash
-        with:
-          working_directory: cnf-certification-test
+        working-directory: cnf-certification-test
 
       - name: 'Test: Run without any TS, just get diagnostic information'
         run: TNF_LOG_LEVEL=${TNF_SMOKE_TESTS_LOG_LEVEL} ./run-tnf-container.sh ${{ env.TESTING_CMD_PARAMS }}
-        with:
-          working_directory: cnf-certification-test
+        working-directory: cnf-certification-test
           
       - name: 'Test: Run Smoke Tests in a TNF container'
         run: TNF_LOG_LEVEL=${TNF_SMOKE_TESTS_LOG_LEVEL} ./run-tnf-container.sh ${{ env.TESTING_CMD_PARAMS }} -l "common"
-        with:
-          working_directory: cnf-certification-test
+        working-directory: cnf-certification-test
 
       - name: Upload container test results as an artifact
         uses: actions/upload-artifact@v3
