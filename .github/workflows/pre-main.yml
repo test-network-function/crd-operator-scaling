@@ -45,6 +45,12 @@ jobs:
         with:
           go-version: 1.20.1
 
+      - name: Write temporary docker file
+        run: |
+          mkdir -p /home/runner/.docker
+          touch ${PFLT_DOCKERCONFIG}
+          echo '{ "auths": {} }' >> ${PFLT_DOCKERCONFIG}
+
       # Clone all of the repos needed.
       # We need the crd-operator-scaling, cnf-certification-test, and cnf-certification-test-partner repos.
       - name: Check out crd-operator-scaling code
