@@ -79,6 +79,10 @@ jobs:
         with:
           working_directory: cnf-certification-test-partner
 
+      # To prevent errors in the `make install` step
+      - name: Remove -partner repo's codebase
+        run: rm -rf cnf-certification-test-partner
+
       - name: Run 'make install'
         run: make install
 
