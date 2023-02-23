@@ -75,9 +75,6 @@ jobs:
         with:
           working_directory: cnf-certification-test-partner
 
-      - name: Run 'add missing go'
-        run: sudo go get -t .
-
       # Deploy the CRD scaling repo 
       - name: Run 'make manifests'
         run: make manifests
