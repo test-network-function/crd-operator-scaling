@@ -50,8 +50,9 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	}
 
 	log.Info("create deployment")
-	size := int32(1)
+	size := foo.Spec.Replicas
 	faleb := false
+	tim := int64(30)
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "jack",
@@ -79,17 +80,19 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app":                               "jack",
-						"test-network-function.com/generic": "target",
+						"app":                                 "jack",
+						"test-network-function.com/generic":   "target",
+						"test-network-function.com/container": "target",
 					},
 				},
 				Spec: corev1.PodSpec{
-					AutomountServiceAccountToken: &faleb,
+					TerminationGracePeriodSeconds: &tim,
+					AutomountServiceAccountToken:  &faleb,
 					Containers: []corev1.Container{{
+						TerminationMessagePolicy: "FallbackToLogsOnError",
 						Resources: corev1.ResourceRequirements{
 							Limits: corev1.ResourceList{
-								corev1.ResourceMemory: *resource.NewMilliQuantity(512, resource.BinarySI),
-								corev1.ResourceCPU:    *resource.NewMilliQuantity(500, resource.DecimalSI),
+								corev1.ResourceCPU: *resource.NewMilliQuantity(500, resource.DecimalSI),
 							},
 							Requests: corev1.ResourceList{
 								corev1.ResourceCPU: *resource.NewMilliQuantity(250, resource.DecimalSI),
@@ -199,7 +202,7 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	if err := r.Status().Update(ctx, &foo); err != nil {
 		return ctrl.Result{}, err
 	}
-	time.Sleep(10 * time.Second)
+	time.Sleep(50 * time.Second)
 	var newfoo tutorialv1.Foo
 	if err := r.Get(ctx, req.NamespacedName, &newfoo); err != nil {
 		log.Error(err, "unable to fetch Foo")
@@ -218,7 +221,7 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			if err := r.Status().Update(ctx, &newfoo); err != nil {
 				return ctrl.Result{}, err
 			}
-			time.Sleep(10 * time.Second)
+			time.Sleep(50 * time.Second)
 		}
 	}
 	log.Info("foo custom resource reconciled")
