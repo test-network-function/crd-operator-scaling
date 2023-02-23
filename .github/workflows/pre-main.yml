@@ -52,6 +52,10 @@ jobs:
         with:
           ref: ${{ github.sha }}
 
+      # Deploy the CRD scaling repo 
+      - name: Run 'make manifests'
+        run: make manifests
+
       - name: Check out `cnf-certification-test-partner`
         uses: actions/checkout@v3
         with:
@@ -74,10 +78,6 @@ jobs:
         uses: ./cnf-certification-test-partner/.github/actions/create-local-test-infra-resources
         with:
           working_directory: cnf-certification-test-partner
-
-      # Deploy the CRD scaling repo 
-      - name: Run 'make manifests'
-        run: make manifests
 
       - name: Run 'make install'
         run: make install
