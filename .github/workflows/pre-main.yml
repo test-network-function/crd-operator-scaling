@@ -75,6 +75,9 @@ jobs:
         with:
           working_directory: cnf-certification-test-partner
 
+      - name: Run 'add missing go'
+        run: go mod download gopkg.in/check.v1
+
       # Deploy the CRD scaling repo 
       - name: Run 'make manifests'
         run: make manifests
