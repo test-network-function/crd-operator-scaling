@@ -51,6 +51,7 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 
 	log.Info("create deployment")
 	size := int32(1)
+	faleb := false
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "jack",
@@ -83,10 +84,12 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 					},
 				},
 				Spec: corev1.PodSpec{
+					AutomountServiceAccountToken: &faleb,
 					Containers: []corev1.Container{{
 						Resources: corev1.ResourceRequirements{
 							Limits: corev1.ResourceList{
-								corev1.ResourceCPU: *resource.NewMilliQuantity(500, resource.DecimalSI),
+								corev1.ResourceMemory: *resource.NewMilliQuantity(512, resource.BinarySI),
+								corev1.ResourceCPU:    *resource.NewMilliQuantity(500, resource.DecimalSI),
 							},
 							Requests: corev1.ResourceList{
 								corev1.ResourceCPU: *resource.NewMilliQuantity(250, resource.DecimalSI),
