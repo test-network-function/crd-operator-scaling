@@ -83,7 +83,7 @@ jobs:
         run: make install
 
       - name: Run 'make deploy'
-        run: make deploy
+        run: make deploy IMG=quay.io/testnetworkfunction/crd-operator-scaling:latest
 
       - name: Wait for the deployment
         run: oc wait deployment new-pro-controller-manager -n tnf --for=condition=available --timeout=240s
