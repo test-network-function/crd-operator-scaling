@@ -92,7 +92,8 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 						TerminationMessagePolicy: "FallbackToLogsOnError",
 						Resources: corev1.ResourceRequirements{
 							Limits: corev1.ResourceList{
-								corev1.ResourceCPU: *resource.NewMilliQuantity(500, resource.DecimalSI),
+								corev1.ResourceMemory: *resource.NewMilliQuantity(1000*1024*1024*1024, resource.BinarySI),
+								corev1.ResourceCPU:    *resource.NewMilliQuantity(500, resource.DecimalSI),
 							},
 							Requests: corev1.ResourceList{
 								corev1.ResourceCPU: *resource.NewMilliQuantity(250, resource.DecimalSI),
