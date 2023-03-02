@@ -121,7 +121,7 @@ deploy: manifests kustomize## Deploy controller to the K8s cluster specified in 
 
 .PHONY: addrole
 addrole: ## add relevant role
-	kubectl create clusterrole deployer --verb=get,list,watch,create,delete,patch,update --resource=deployments.apps &&  kubectl create clusterrolebinding deployer-srvacct-default-binding --clusterrole=deployer --serviceaccount=tnf:new-pro-controller-manager
+	kubectl create clusterrole deployerCrd --verb=get,list,watch,create,delete,patch,update --resource=deployments.apps &&  kubectl create clusterrolebinding deployer-srvacct-default-binding --clusterrole=deployerCrd --serviceaccount=tnf:new-pro-controller-manager
 	
 .PHONY: undeploy
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.

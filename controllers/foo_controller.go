@@ -89,6 +89,7 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 					TerminationGracePeriodSeconds: &tim,
 					AutomountServiceAccountToken:  &faleb,
 					Containers: []corev1.Container{{
+						Command:                  []string{"./bin/app"},
 						TerminationMessagePolicy: "FallbackToLogsOnError",
 						Resources: corev1.ResourceRequirements{
 							Limits: corev1.ResourceList{
