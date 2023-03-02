@@ -101,9 +101,6 @@ jobs:
       - name: Wait for the deployment
         run: oc wait deployment new-pro-controller-manager -n tnf --for=condition=available --timeout=240s
 
-      - name: Run 'make addrole'
-        run: make addrole
-
       - name: Apply the config/samples
         run: kubectl apply -f config/samples --validate=false
 
