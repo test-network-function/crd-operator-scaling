@@ -93,7 +93,7 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 						TerminationMessagePolicy: "FallbackToLogsOnError",
 						Resources: corev1.ResourceRequirements{
 							Limits: corev1.ResourceList{
-								corev1.ResourceMemory: *resource.NewMilliQuantity(1000*1024*1024*1024, resource.BinarySI),
+								corev1.ResourceMemory: *resource.NewMilliQuantity(50*1024*1024*1024, resource.BinarySI),
 								corev1.ResourceCPU:    *resource.NewMilliQuantity(500, resource.DecimalSI),
 							},
 							Requests: corev1.ResourceList{
@@ -204,7 +204,7 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	if err := r.Status().Update(ctx, &foo); err != nil {
 		return ctrl.Result{}, err
 	}
-	time.Sleep(50 * time.Second)
+	time.Sleep(3 * time.Second)
 	var newfoo tutorialv1.Foo
 	if err := r.Get(ctx, req.NamespacedName, &newfoo); err != nil {
 		log.Error(err, "unable to fetch Foo")
@@ -223,7 +223,7 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			if err := r.Status().Update(ctx, &newfoo); err != nil {
 				return ctrl.Result{}, err
 			}
-			time.Sleep(50 * time.Second)
+			time.Sleep(3 * time.Second)
 		}
 	}
 	log.Info("foo custom resource reconciled")

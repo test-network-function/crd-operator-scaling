@@ -68,14 +68,16 @@ jobs:
       - name: Check out `cnf-certification-test-partner`
         uses: actions/checkout@v3
         with:
-          repository: test-network-function/cnf-certification-test-partner
+          repository: aabughosh/cnf-certification-test-partner
           path: cnf-certification-test-partner
+          ref: sleep-before-wait
 
       - name: Check out `cnf-certification-test`
         uses: actions/checkout@v3
         with:
           repository: test-network-function/cnf-certification-test
           path: cnf-certification-test
+
 
       # Create a Kind cluster for testing from the -partner repo
       - name: Start the Kind cluster for `local-test-infra`
