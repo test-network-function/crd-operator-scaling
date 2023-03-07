@@ -204,7 +204,7 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	if err := r.Status().Update(ctx, &foo); err != nil {
 		return ctrl.Result{}, err
 	}
-	time.Sleep(50 * time.Second)
+	time.Sleep(3 * time.Second)
 	var newfoo tutorialv1.Foo
 	if err := r.Get(ctx, req.NamespacedName, &newfoo); err != nil {
 		log.Error(err, "unable to fetch Foo")
@@ -223,7 +223,7 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			if err := r.Status().Update(ctx, &newfoo); err != nil {
 				return ctrl.Result{}, err
 			}
-			time.Sleep(50 * time.Second)
+			time.Sleep(3 * time.Second)
 		}
 	}
 	log.Info("foo custom resource reconciled")
