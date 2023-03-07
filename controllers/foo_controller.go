@@ -93,11 +93,11 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 						TerminationMessagePolicy: "FallbackToLogsOnError",
 						Resources: corev1.ResourceRequirements{
 							Limits: corev1.ResourceList{
-								corev1.ResourceMemory: *resource.NewMilliQuantity(50*1024*1024*1024, resource.BinarySI),
-								corev1.ResourceCPU:    *resource.NewMilliQuantity(500, resource.DecimalSI),
+								corev1.ResourceMemory: resource.MustParse("20Mi"),
+								corev1.ResourceCPU:    resource.MustParse("10m"),
 							},
 							Requests: corev1.ResourceList{
-								corev1.ResourceCPU: *resource.NewMilliQuantity(250, resource.DecimalSI),
+								corev1.ResourceCPU: resource.MustParse("10m"),
 							},
 						},
 						Image:           "quay.io/testnetworkfunction/cnf-test-partner:latest",
