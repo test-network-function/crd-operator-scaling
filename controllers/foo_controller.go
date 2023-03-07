@@ -74,13 +74,13 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			Replicas: &size,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": "testdp",
+					"app": "jack",
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app":                                 "testdp",
+						"app":                                 "jack",
 						"test-network-function.com/generic":   "target",
 						"test-network-function.com/container": "target",
 					},
