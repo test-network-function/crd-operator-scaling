@@ -78,6 +78,7 @@ jobs:
           repository: test-network-function/cnf-certification-test
           path: cnf-certification-test
 
+
       # Create a Kind cluster for testing from the -partner repo
       - name: Start the Kind cluster for `local-test-infra`
         uses: ./cnf-certification-test-partner/.github/actions/start-k8s-cluster
