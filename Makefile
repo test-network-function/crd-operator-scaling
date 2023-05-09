@@ -42,7 +42,7 @@ help: ## Display this help.
 ##@ Development
 
 .PHONY: manifests
-manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+manifests: controller-gen ## Generate WebhookConfiguration, Role and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate
@@ -121,7 +121,7 @@ deploy: manifests kustomize## Deploy controller to the K8s cluster specified in 
 
 .PHONY: addrole
 addrole: ## add relevant role
-	kubectl create clusterrole deployerCrd --verb=get,list,watch,create,delete,patch,update --resource=deployments.apps &&  kubectl create clusterrolebinding deployer-srvacct-default-binding --clusterrole=deployerCrd --serviceaccount=tnf:new-pro-controller-manager
+	kubectl create role deployerCrd --verb=get,list,watch,create,delete,patch,update --resource=deployments.apps &&  kubectl create rolebinding deployer-srvacct-default-binding --role=deployerCrd --serviceaccount=tnf:new-pro-controller-manager
 	
 .PHONY: undeploy
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
@@ -139,8 +139,8 @@ CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool Versions
-KUSTOMIZE_VERSION ?= v5.0.1
-CONTROLLER_TOOLS_VERSION ?= v0.11.4
+KUSTOMIZE_VERSION ?= v5.0.2
+CONTROLLER_TOOLS_VERSION ?= v0.12.0
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
