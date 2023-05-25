@@ -105,7 +105,7 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 						Name:            "jack",
 						Ports: []corev1.ContainerPort{{
 							ContainerPort: 8080,
-							Name:          "jack",
+							Name:          "http-jack",
 						}},
 						Lifecycle: &corev1.Lifecycle{
 							PostStart: &corev1.LifecycleHandler{
