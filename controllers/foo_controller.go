@@ -17,10 +17,8 @@ import (
 	tutorialv1 "my.domain/tutorial/api/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // FooReconciler reconciles a Foo object
@@ -234,10 +232,6 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 func (r *FooReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&tutorialv1.Foo{}).
-		Watches(
-			&source.Kind{Type: &corev1.Pod{}},
-			handler.EnqueueRequestsFromMapFunc(r.mapPodsReqToFooReq),
-		).
 		Complete(r)
 }
 
