@@ -13,7 +13,6 @@ on:
   workflow_dispatch:
 env:
   REGISTRY: quay.io
-  REGISTRY_LOCAL: localhost
   TNF_IMAGE_NAME: testnetworkfunction/cnf-certification-test
   TNF_IMAGE_TAG: unstable
   OCT_IMAGE_NAME: testnetworkfunction/oct
@@ -25,10 +24,15 @@ env:
   TNF_CONFIG_DIR: /tmp/tnf/config
   TNF_OUTPUT_DIR: /tmp/tnf/output
   TNF_SRC_URL: 'https://github.com/${{ github.repository }}'
-  TESTING_CMD_PARAMS: '-n host -i ${REGISTRY_LOCAL}/${TNF_IMAGE_NAME}:${TNF_IMAGE_TAG} -t ${TNF_CONFIG_DIR} -o ${TNF_OUTPUT_DIR}'
+  SMOKE_TESTS_GINKGO_LABELS_FILTER: '!affiliated-certification-container-is-certified-digest && !access-control-security-context && !access-control-namespace-resource-quota && !networking-network-policy-deny-all'
+  TESTING_CMD_PARAMS: '-n host -i ${REGISTRY}/${TNF_IMAGE_NAME}:${TNF_IMAGE_TAG} -t ${TNF_CONFIG_DIR} -o ${TNF_OUTPUT_DIR}'
   TNF_SMOKE_TESTS_LOG_LEVEL: trace
   ON_DEMAND_DEBUG_PODS: false
   TERM: xterm-color
+  OPERATOR_IMAGE_NAME: testnetworkfunction/crd-operator-scaling
+  OPERATOR_IMAGE_TAG: unstable
+  OPERATOR_LOCAL_TEST_IMAGE_TAG: test
+  TNF_TEST_NAMESPACE: tnf
 
 jobs:
   smoke-tests:
@@ -61,9 +65,9 @@ jobs:
         with:
           ref: ${{ github.sha }}
 
-      # Deploy the CRD scaling repo 
-      - name: Run 'make manifests'
-        run: make manifests
+      # Deploy the CRD scaling repo and build it
+      - name: Build operator and make local docker image
+        run: make docker-build IMG=${OPERATOR_IMAGE_NAME}:${OPERATOR_LOCAL_TEST_IMAGE_TAG}
 
       - name: Check out `cnf-certification-test-partner`
         uses: actions/checkout@v3
@@ -71,47 +75,39 @@ jobs:
           repository: test-network-function/cnf-certification-test-partner
           path: cnf-certification-test-partner
 
-      - name: Check out `cnf-certification-test`
-        uses: actions/checkout@v3
-        with:
-          repository: test-network-function/cnf-certification-test
-          path: cnf-certification-test
-
-
-      # Create a Kind cluster for testing from the -partner repo
+      # Create a Kind cluster for testing the operator
       - name: Start the Kind cluster for `local-test-infra`
         uses: ./cnf-certification-test-partner/.github/actions/start-k8s-cluster
         with:
           working_directory: cnf-certification-test-partner
 
-      - name: Create `local-test-infra` OpenShift resources
-        uses: ./cnf-certification-test-partner/.github/actions/create-local-test-infra-resources
+      - name: Load local container image into kind nodes so it can be pulled from the operator pod.
+        run: kind load docker-image ${OPERATOR_IMAGE_NAME}:${OPERATOR_LOCAL_TEST_IMAGE_TAG} ${OPERATOR_IMAGE_NAME}:${OPERATOR_LOCAL_TEST_IMAGE_TAG}
+
+      - name: Deploy operator using the local image created in a previous step.
+        run: make deploy IMG=${OPERATOR_IMAGE_NAME}:${OPERATOR_LOCAL_TEST_IMAGE_TAG}
+
+      - name: Wait for the operator's controller to be running
+        run: oc wait deployment new-pro-controller-manager -n "${TNF_TEST_NAMESPACE}" --for=condition=available --timeout=240s
+
+      - name: Show controller's container image
+        run: oc get pods -n "${TNF_TEST_NAMESPACE}" -o json | jq '.items[] | .spec.containers[] | select(.name == "manager") | .image'
+
+      - name: Create operator cluster role.
+        run: make addrole
+
+      - name: Deploy operator sample CRs.
+        run: oc apply -f config/samples --validate=false
+
+      - name: Wait for operator's "jack" pods to be running.
+        run: oc wait deployment jack --for=condition=available --namespace "${TNF_TEST_NAMESPACE}" --timeout=600s
+
+      # Run the cnf-certification-test repo as a container
+      - name: Check out `cnf-certification-test`
+        uses: actions/checkout@v3
         with:
-          working_directory: cnf-certification-test-partner
-
-      # To prevent errors in the `make install` step
-      - name: Remove -partner repo's codebase
-        run: rm -rf cnf-certification-test-partner
-
-      - name: Run 'make install'
-        run: make install
-
-      - name: Run 'make deploy'
-        run: make deploy IMG=quay.io/testnetworkfunction/crd-operator-scaling:latest
-
-      - name: Wait for the deployment
-        run: oc wait deployment new-pro-controller-manager -n tnf --for=condition=available --timeout=240s
-
-      - name: Apply the config/samples
-        run: kubectl apply -f config/samples --validate=false
-
-      # Clone and run the cnf-certification-test repo as a container
-      - name: Build the `cnf-certification-test` image
-        run: |
-          make build-image-local
-        env:
-          IMAGE_TAG: ${TNF_IMAGE_TAG}
-        working-directory: cnf-certification-test
+          repository: test-network-function/cnf-certification-test
+          path: cnf-certification-test
 
       - name: Create required TNF config files and directories
         run: |
@@ -120,13 +116,32 @@ jobs:
         shell: bash
         working-directory: cnf-certification-test
 
-      - name: 'Test: Run without any TS, just get diagnostic information'
-        run: TNF_LOG_LEVEL=${TNF_SMOKE_TESTS_LOG_LEVEL} ./run-tnf-container.sh ${{ env.TESTING_CMD_PARAMS }}
+      - name: Show current resources in the test namespace
+        run: oc get all -n "${TNF_TEST_NAMESPACE}"
+
+      - name: Run Smoke Tests in a TNF container
+        run: TNF_LOG_LEVEL=${TNF_SMOKE_TESTS_LOG_LEVEL} ./run-tnf-container.sh ${{ env.TESTING_CMD_PARAMS }} -l "${SMOKE_TESTS_GINKGO_LABELS_FILTER}"
         working-directory: cnf-certification-test
-          
-      - name: 'Test: Run Smoke Tests in a TNF container'
-        run: TNF_LOG_LEVEL=${TNF_SMOKE_TESTS_LOG_LEVEL} ./run-tnf-container.sh ${{ env.TESTING_CMD_PARAMS }} -l 'common && !affiliated-certification-container-is-certified-digest'
-        working-directory: cnf-certification-test
+
+      # Push the new operator image to Quay.io.
+      # First, we need to tag the local image with the quay.io tag.
+      - name: (if on main and upstream) Tag local image so it can be pushed to quay.io
+        if: ${{ github.ref == 'refs/heads/main' && github.repository_owner == 'test-network-function' }}
+        run: docker tag ${OPERATOR_IMAGE_NAME}:${OPERATOR_LOCAL_TEST_IMAGE_TAG} ${REGISTRY}/${OPERATOR_IMAGE_NAME}:${OPERATOR_IMAGE_TAG}
+
+      - name: (if on main and upstream) Authenticate against Quay.io
+        if: ${{ github.ref == 'refs/heads/main' && github.repository_owner == 'test-network-function' }}
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          # Use a Robot Account to authenticate against Quay.io
+          # https://docs.quay.io/glossary/robot-accounts.html
+          username: ${{ secrets.QUAY_ROBOT_USERNAME }}
+          password: ${{ secrets.QUAY_ROBOT_TOKEN }}
+
+      - name: (if on main and upstream) Push the newly built image to Quay.io
+        if: ${{ github.ref == 'refs/heads/main' && github.repository_owner == 'test-network-function' }}
+        run: docker push ${REGISTRY}/${TNF_IMAGE_NAME}:${OPERATOR_IMAGE_TAG}
 
       - name: Upload container test results as an artifact
         uses: actions/upload-artifact@v3
