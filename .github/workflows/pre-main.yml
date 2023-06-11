@@ -141,7 +141,7 @@ jobs:
 
       - name: (if on main and upstream) Push the newly built image to Quay.io
         if: ${{ github.ref == 'refs/heads/main' && github.repository_owner == 'test-network-function' }}
-        run: docker push ${REGISTRY}/${TNF_IMAGE_NAME}:${OPERATOR_IMAGE_TAG}
+        run: docker push ${REGISTRY}/${OPERATOR_IMAGE_NAME}:${OPERATOR_IMAGE_TAG}
 
       - name: Upload container test results as an artifact
         uses: actions/upload-artifact@v3
