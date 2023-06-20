@@ -1,0 +1,21 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: jack-pdb-min
+  namespace: tnf
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: jack
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: jack-pdb-max
+  namespace: tnf
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: jack
