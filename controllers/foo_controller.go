@@ -53,8 +53,9 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			Kind:       "ServiceAccount",
 			APIVersion: "v1",
 		},
-		ObjectMeta: metav1.ObjectMeta{Namespace: "tnf", Name: "roleSaName"},
+		ObjectMeta: metav1.ObjectMeta{Namespace: "tnf", Name: "role-sa-name"},
 	}
+
 	errsa := r.Create(ctx, sa)
 	if errsa != nil {
 		log.Error(errsa, "unable to create ServiceAccount")
@@ -97,7 +98,7 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 					},
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName:            "roleSaName",
+					ServiceAccountName:            "role-sa-name",
 					TerminationGracePeriodSeconds: &tim,
 					AutomountServiceAccountToken:  &faleb,
 					Containers: []corev1.Container{{
