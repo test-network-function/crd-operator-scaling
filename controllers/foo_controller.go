@@ -46,7 +46,6 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		log.Error(err, "unable to fetch Foo")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-
 	log.Info("create deployment")
 	size := foo.Spec.Replicas
 	faleb := false
@@ -84,6 +83,7 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 					},
 				},
 				Spec: corev1.PodSpec{
+					ServiceAccountName:            "role-sa-name",
 					TerminationGracePeriodSeconds: &tim,
 					AutomountServiceAccountToken:  &faleb,
 					Containers: []corev1.Container{{
@@ -170,6 +170,7 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			},
 		},
 	}
+
 	log.Info("after create deployment")
 	found := &appsv1.Deployment{}
 	errf := r.Get(context.TODO(), types.NamespacedName{

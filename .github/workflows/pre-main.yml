@@ -92,7 +92,10 @@ jobs:
 
       - name: Show controller's container image
         run: oc get pods -n "${TNF_TEST_NAMESPACE}" -o json | jq '.items[] | .spec.containers[] | select(.name == "manager") | .image'
-
+     
+      - name: Run Make install to install dependencies
+        run: make install
+             
       - name: Create operator cluster role.
         run: make addrole
 
