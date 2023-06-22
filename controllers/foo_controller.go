@@ -46,6 +46,19 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		log.Error(err, "unable to fetch Foo")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+	log.Info("create ServiceAccount")
+
+	sa := &corev1.ServiceAccount{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ServiceAccount",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{Namespace: "tnf", Name: "roleSaName"},
+	}
+	errsa := r.Create(ctx, sa)
+	if errsa != nil {
+		log.Error(errsa, "unable to create ServiceAccount")
+	}
 
 	log.Info("create deployment")
 	size := foo.Spec.Replicas
@@ -84,6 +97,7 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 					},
 				},
 				Spec: corev1.PodSpec{
+					ServiceAccountName:            "roleSaName",
 					TerminationGracePeriodSeconds: &tim,
 					AutomountServiceAccountToken:  &faleb,
 					Containers: []corev1.Container{{
@@ -170,6 +184,7 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 			},
 		},
 	}
+
 	log.Info("after create deployment")
 	found := &appsv1.Deployment{}
 	errf := r.Get(context.TODO(), types.NamespacedName{
