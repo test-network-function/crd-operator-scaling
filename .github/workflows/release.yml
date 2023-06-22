@@ -27,7 +27,7 @@ jobs:
         run: echo "::remove-matcher owner=go::"
 
       - name: Show release tag
-        run: "echo Version: ${{ github.ref_name }}. Full image tag: ${OPERATOR_IMAGE_NAME}:${OPERATOR_IMAGE_TAG}"
+        run: "echo Version: ${{ github.ref_name }}. Full image tag: ${REGISTRY}/${OPERATOR_IMAGE_NAME}:${OPERATOR_IMAGE_TAG}"
 
       # Clone the operator repo.
       - name: Check out crd-operator-scaling code
@@ -37,7 +37,7 @@ jobs:
 
       # Deploy the CRD scaling repo and build it
       - name: Build operator and make local docker image
-        run: make docker-build IMG=${OPERATOR_IMAGE_NAME}:${OPERATOR_IMAGE_TAG}
+        run: make docker-build IMG=${REGISTRY}/${OPERATOR_IMAGE_NAME}:${OPERATOR_IMAGE_TAG}
 
       # Push the new operator image to Quay.io.
       - name: Authenticate against Quay.io
