@@ -86,16 +86,16 @@ jobs:
 
       - name: Deploy operator using the local image created in a previous step.
         run: make deploy IMG=${OPERATOR_IMAGE_NAME}:${OPERATOR_LOCAL_TEST_IMAGE_TAG}
-      
-      - name: Run Make install to install dependencies
-        run: make install
-        
+
       - name: Wait for the operator's controller to be running
         run: oc wait deployment new-pro-controller-manager -n "${TNF_TEST_NAMESPACE}" --for=condition=available --timeout=240s
 
       - name: Show controller's container image
         run: oc get pods -n "${TNF_TEST_NAMESPACE}" -o json | jq '.items[] | .spec.containers[] | select(.name == "manager") | .image'
      
+      - name: Run Make install to install dependencies
+        run: make install
+             
       - name: Create operator cluster role.
         run: make addrole
 
