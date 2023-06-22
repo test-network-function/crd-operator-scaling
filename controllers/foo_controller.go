@@ -7,7 +7,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,65 +46,6 @@ func (r *FooReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		log.Error(err, "unable to fetch Foo")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	log.Info("create ServiceAccount")
-	aRole := rbacv1.Role{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Role",
-			APIVersion: "v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "role-sa-name",
-			Namespace: "tnf",
-		},
-		Rules: []rbacv1.PolicyRule{{
-			APIGroups:     []string{"security.openshift.io"},
-			Resources:     []string{"securitycontextconstraints"},
-			ResourceNames: []string{"privileged"},
-			Verbs:         []string{"use"},
-		},
-		},
-	}
-
-	aRoleBinding := rbacv1.RoleBinding{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "RoleBinding",
-			APIVersion: "v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "role-sa-name",
-			Namespace: "tnf",
-		},
-		Subjects: []rbacv1.Subject{{
-			Kind:      "ServiceAccount",
-			Name:      "role-sa-name",
-			Namespace: "tnf",
-		}},
-		RoleRef: rbacv1.RoleRef{
-			Kind:     "Role",
-			Name:     "role-sa-name",
-			APIGroup: "rbac.authorization.k8s.io",
-		},
-	}
-	sa := &corev1.ServiceAccount{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "ServiceAccount",
-			APIVersion: "v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{Namespace: "tnf", Name: "role-sa-name"},
-	}
-	errsa := r.Create(ctx, &aRole)
-	if errsa != nil {
-		log.Error(errsa, "unable to create ServiceAccount")
-	}
-	errsa = r.Create(ctx, &aRoleBinding)
-	if errsa != nil {
-		log.Error(errsa, "unable to create ServiceAccount")
-	}
-	errsa = r.Create(ctx, sa)
-	if errsa != nil {
-		log.Error(errsa, "unable to create ServiceAccount")
-	}
-
 	log.Info("create deployment")
 	size := foo.Spec.Replicas
 	faleb := false

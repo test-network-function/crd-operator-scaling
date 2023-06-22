@@ -99,9 +99,6 @@ jobs:
       - name: Deploy operator sample CRs.
         run: oc apply -f config/samples --validate=false
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-
       - name: Wait for operator's "jack" pods to be running.
         run: oc wait deployment jack --for=condition=available --namespace "${TNF_TEST_NAMESPACE}" --timeout=600s
 
