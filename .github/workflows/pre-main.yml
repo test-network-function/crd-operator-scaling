@@ -72,7 +72,7 @@ jobs:
       # Clone all of the repos needed.
       # We need the crd-operator-scaling, cnf-certification-test, and cnf-certification-test-partner repos.
       - name: Check out crd-operator-scaling code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
 
@@ -81,7 +81,7 @@ jobs:
         run: make docker-build IMG=${OPERATOR_IMAGE_NAME}:${OPERATOR_LOCAL_TEST_IMAGE_TAG}
 
       - name: Check out `cnf-certification-test-partner`
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: test-network-function/cnf-certification-test-partner
           path: cnf-certification-test-partner
@@ -118,7 +118,7 @@ jobs:
 
       # Run the cnf-certification-test repo as a container
       - name: Check out `cnf-certification-test`
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: test-network-function/cnf-certification-test
           path: cnf-certification-test
