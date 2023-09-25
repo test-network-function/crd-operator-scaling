@@ -1,3 +1,6 @@
+![Project frozen](https://img.shields.io/badge/status-frozen-blue.png) ![Project unmaintained](https://img.shields.io/badge/project-unmaintained-red.svg)
+Replaced by [cr-scale-operator](https://github.com/test-network-function/cr-scale-operator)
+
 <h1> DEPRECATED </h1>
 # new-pro
 // TODO(user): Add simple overview of use/purpose
